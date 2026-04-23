@@ -1,0 +1,33 @@
+# virtual environment
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# build artifacts
+dist/
+build/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# environment secrets
+.env
+*.env
+
+# OS
+.DS_Store
+Thumbs.db
