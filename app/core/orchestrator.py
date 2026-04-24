@@ -12,6 +12,7 @@ class CognitiveOrchestrator:
         articulation_engine,
         telemetry,
         recursion_engine,
+        divergence_rkg=None,
     ):
         self.memory_router = memory_router
         self.egf = egf
@@ -24,6 +25,7 @@ class CognitiveOrchestrator:
         self.articulation_engine = articulation_engine
         self.telemetry = telemetry
         self.recursion_engine = recursion_engine
+        self.divergence_rkg = divergence_rkg
 
     def run(self, context):
         self.telemetry.start(context)
@@ -47,6 +49,24 @@ class CognitiveOrchestrator:
             wisdom=wisdom_adjusted,
             context=context,
         )
+
+        # Post-verdict semantic divergence check
+        if self.divergence_rkg is not None:
+            verdict_text = harmonized.get("selected", {}).get("text", "")
+            if verdict_text:
+                ctx_dict = context if isinstance(context, dict) else context.__dict__
+                evidence = [e.get("content", e.get("text", "")) for e in ctx_dict.get("evidence_items", [])]
+                rkg_result = self.divergence_rkg.evaluate_verdict(
+                    verdict_text=verdict_text,
+                    supporting_evidence=[e for e in evidence if e],
+                    harmonized=harmonized,
+                    context=context if not isinstance(context, dict) else None,
+                )
+                if rkg_result.get("action") not in ("submit", "submit_justified"):
+                    harmonized.setdefault("flags", []).append(
+                        f"divergence:{rkg_result.get('action')}:score={rkg_result.get('score', 0):.2f}"
+                    )
+                harmonized["divergence_rkg"] = rkg_result
 
         reviewed = self.recursion_engine.recheck(harmonized, context)
         response = self.articulation_engine.render(reviewed, context)
